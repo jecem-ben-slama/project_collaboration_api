@@ -19,8 +19,9 @@ public class WebSecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf(csrf -> csrf.disable()) // Disable CSRF for APIs
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**").permitAll() // Login/Register are
-                                                                                                // public
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**", "/api/users/register").permitAll() // Login/Register
+                                                                                                                       // are
+                        // public
                         .anyRequest().authenticated() // Everything else needs a token
                 );
 

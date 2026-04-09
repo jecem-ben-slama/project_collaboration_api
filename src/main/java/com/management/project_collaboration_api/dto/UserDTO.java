@@ -9,4 +9,5 @@ public class UserDTO {
     private String email;
     private String role;
     private String categoryLabel; // We just send the name of the category
+    private Long categoryId; // Added categoryId
 }

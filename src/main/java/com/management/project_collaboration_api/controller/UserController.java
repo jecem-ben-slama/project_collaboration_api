@@ -71,11 +71,22 @@ public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
-    public UserDTO update(@PathVariable Long id, @RequestBody User user) {
-        return userService.update(id, user);
-    }
+    @PreAuthorize("hasRole('ADMIN', 'EMPLOYEE')") // Both Admin and Employee can update, but logic in service will handle restrictions
+    public ResponseEntity<UserDTO> updateUser(
+            @PathVariable Long id,
+            @RequestBody Map<String, Object> payload) {
 
+        User userDetails = new User();
+        userDetails.setName((String) payload.get("name"));
+        userDetails.setEmail((String) payload.get("email"));
+        userDetails.setPassword((String) payload.get("password"));
+
+        // Extract categoryId (might be null for Admins)
+        Object catIdObj = payload.get("categoryId");
+        Long categoryId = (catIdObj != null) ? Long.valueOf(catIdObj.toString()) : null;
+
+        return ResponseEntity.ok(userService.updateUser(id, userDetails, categoryId));
+    }
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable Long id) {

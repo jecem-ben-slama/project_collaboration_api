@@ -55,13 +55,33 @@ public class UserService {
         return modelMapper.map(savedUser, UserDTO.class);
     }
 
-    public UserDTO update(Long id, User details) {
-        User user = userRepo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
-        user.setName(details.getName());
-        user.setEmail(details.getEmail());
-        user.setRole(details.getRole());
-        user.setCategory(details.getCategory());
-        return modelMapper.map(userRepo.save(user), UserDTO.class);
+    public UserDTO updateUser(Long id, User userDetails, Long categoryId) {
+        // 1. Find existing user
+        User existingUser = userRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("User not found with id: " + id));
+
+        // 2. Update basic fields
+        existingUser.setName(userDetails.getName());
+        existingUser.setEmail(userDetails.getEmail());
+
+        // Only update password if a new one is provided
+        if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
+            existingUser.setPassword(passwordEncoder.encode(userDetails.getPassword()));
+        }
+
+        // 3. Handle Category Update
+        if (categoryId != null) {
+            Category category = categoryRepo.findById(categoryId)
+                    .orElseThrow(() -> new RuntimeException("Category not found"));
+            existingUser.setCategory(category);
+        } else if (existingUser.getRole() == User.Role.ADMIN) {
+            // If updating an Admin, we can explicitly allow the category to be null
+            existingUser.setCategory(null);
+        }
+
+        // 4. Save and Map
+        User updatedUser = userRepo.save(existingUser);
+        return modelMapper.map(updatedUser, UserDTO.class);
     }
 
     public void changePassword(PasswordChangeRequest request) {

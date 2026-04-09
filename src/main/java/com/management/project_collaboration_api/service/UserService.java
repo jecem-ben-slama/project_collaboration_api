@@ -1,24 +1,35 @@
 package com.management.project_collaboration_api.service;
 
+import com.management.project_collaboration_api.dto.PasswordChangeRequest;
 import com.management.project_collaboration_api.dto.UserDTO;
+import com.management.project_collaboration_api.model.Category;
 import com.management.project_collaboration_api.model.User;
+import com.management.project_collaboration_api.repository.CategoryRepository;
 import com.management.project_collaboration_api.repository.UserRepository;
-
-import java.util.List;
-
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.UUID;
 
 @Service
 public class UserService {
     @Autowired
     private UserRepository userRepo;
     @Autowired
+    private CategoryRepository categoryRepo;
+    @Autowired
     private ModelMapper modelMapper;
     @Autowired
-private PasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder;
+
+    // Inject the Email Service
+    @Autowired
+    private EmailService emailService;
 
     public List<UserDTO> getAll() {
         return userRepo.findAll().stream()
@@ -30,12 +41,18 @@ private PasswordEncoder passwordEncoder;
         return modelMapper.map(user, UserDTO.class);
     }
 
-    public UserDTO register(User user) {
-        // Encode the password before saving
-        String encodedPassword = passwordEncoder.encode(user.getPassword());
-        user.setPassword(encodedPassword);
+    public UserDTO register(User user, Long categoryId) {
+        // 1. Encode the password
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        return modelMapper.map(userRepo.save(user), UserDTO.class);
+        // 2. Fetch the category from DB and link it
+        Category category = categoryRepo.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+        user.setCategory(category);
+
+        // 3. Save and map to DTO
+        User savedUser = userRepo.save(user);
+        return modelMapper.map(savedUser, UserDTO.class);
     }
 
     public UserDTO update(Long id, User details) {
@@ -45,6 +62,67 @@ private PasswordEncoder passwordEncoder;
         user.setRole(details.getRole());
         user.setCategory(details.getCategory());
         return modelMapper.map(userRepo.save(user), UserDTO.class);
+    }
+
+    public void changePassword(PasswordChangeRequest request) {
+        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("The old password you entered is incorrect");
+        }
+
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepo.save(user);
+    }
+
+    // --- NEW: Forgot Password Logic ---
+    public void processForgotPassword(String email) {
+        User user = userRepo.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found with this email"));
+
+        // Generate unique token
+        String token = UUID.randomUUID().toString();
+        user.setResetToken(token);
+        user.setTokenExpiration(LocalDateTime.now().plusHours(1));
+        userRepo.save(user);
+
+        // Send Email
+        // Inside processForgotPassword
+        String htmlBody = "<div style='font-family: Arial, sans-serif; max-width: 600px; margin: auto; border: 1px solid #ddd; padding: 20px;'>"
+                +
+                "<h2 style='color: #2c3e50;'>Password Reset Request</h2>" +
+                "<p>Hello,</p>" +
+                "<p>You requested to reset your password for the <strong>Project Collaboration Platform</strong>.</p>" +
+                "<div style='text-align: center; margin: 30px 0;'>" +
+                "<span style='background-color: #f1f1f1; padding: 10px 20px; font-size: 20px; font-weight: bold; border-radius: 5px; color: #333; letter-spacing: 2px;'>"
+                + token + "</span>" +
+                "</div>" +
+                "<p>Please copy this token into the application to reset your password. This token will expire in 1 hour.</p>"
+                +
+                "<hr style='border: none; border-top: 1px solid #eee;'>" +
+                "<p style='font-size: 12px; color: #777;'>If you did not request this, please ignore this email.</p>" +
+                "</div>";
+
+        emailService.sendHtmlEmail(user.getEmail(), "Reset Your Password", htmlBody);
+    }
+
+    // --- NEW: Reset Password Logic ---
+    public void resetPassword(String token, String newPassword) {
+        User user = userRepo.findByResetToken(token)
+                .orElseThrow(() -> new RuntimeException("Invalid or non-existent reset token"));
+
+        if (user.getTokenExpiration().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Reset token has expired");
+        }
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+
+        // Clear token so it's one-time use
+        user.setResetToken(null);
+        user.setTokenExpiration(null);
+        userRepo.save(user);
     }
 
     public void delete(Long id) {

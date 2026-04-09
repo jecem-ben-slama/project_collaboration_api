@@ -16,36 +16,39 @@ public class AuthTokenFilter extends OncePerRequestFilter {
     private JwtUtils jwtUtils;
 
     @Override
-protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-        throws ServletException, IOException {
-    try {
-        String jwt = parseJwt(request);
-        if (jwt != null && jwtUtils.validateToken(jwt)) {
-            String email = jwtUtils.getEmailFromToken(jwt);
-            
-            // 1. Extract the role string from the token
-            String role = jwtUtils.getRoleFromToken(jwt); 
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
+        try {
+            String jwt = parseJwt(request);
+            if (jwt != null && jwtUtils.validateToken(jwt)) {
+                String email = jwtUtils.getEmailFromToken(jwt);
+                String role = jwtUtils.getRoleFromToken(jwt);
 
-            // 2. Wrap it in a GrantedAuthority object. 
-            // NOTE: Spring's hasRole() looks for the "ROLE_" prefix automatically.
-            List<SimpleGrantedAuthority> authorities = java.util.Collections.singletonList(
-                new SimpleGrantedAuthority("ROLE_" + role)
-            );
+                List<SimpleGrantedAuthority> authorities = java.util.Collections.singletonList(
+                        new SimpleGrantedAuthority("ROLE_" + role));
 
-            // 3. Pass the authorities list as the third parameter
-            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
-                    email, 
-                    null, 
-                    authorities); // <--- Changed from null to authorities
+                UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        email,
+                        null,
+                        authorities);
 
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                // --- ADD THIS LINE ---
+                // This links the request (IP, session) to the authentication object
+                authentication
+                        .setDetails(new org.springframework.security.web.authentication.WebAuthenticationDetailsSource()
+                                .buildDetails(request));
+
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+            }
+        } catch (Exception e) {
+            // Use the built-in 'logger' from OncePerRequestFilter
+            logger.error("Cannot set user authentication: " + e.getMessage());
         }
-    } catch (Exception e) {
-        logger.error("Cannot set user authentication: {}", e);
-    }
-    filterChain.doFilter(request, response);
-}
 
+        // This MUST always run, whether the JWT is valid or not
+        filterChain.doFilter(request, response);
+    }
+    
     private String parseJwt(HttpServletRequest request) {
         String headerAuth = request.getHeader("Authorization");
         if (headerAuth != null && headerAuth.startsWith("Bearer ")) {

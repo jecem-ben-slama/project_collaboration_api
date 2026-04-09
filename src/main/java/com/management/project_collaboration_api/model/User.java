@@ -1,4 +1,7 @@
 package com.management.project_collaboration_api.model;
+
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -19,7 +22,8 @@ public class User {
     private String email;
 
     private String password;
-
+    private String resetToken;
+    private LocalDateTime tokenExpiration;
     @Enumerated(EnumType.STRING)
     private Role role; // ADMIN or EMPLOYEE
 

@@ -2,36 +2,51 @@ package com.management.project_collaboration_api.security;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import java.security.Key;
 import java.util.Date;
 
 @Component
 public class JwtUtils {
-    // In a real app, move this to application.properties
-    private final String jwtSecret = "mySecretKeyForProjectCollaborationAPI2026";
-    private final int jwtExpirationMs = 86400000; // 24 hours
 
-    private final Key key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    @Value("${project.app.jwtSecret}")
+    private String jwtSecret;
+
+    @Value("${project.app.jwtExpirationMs}")
+    private long jwtExpirationMs;
+
+    private Key key;
+
+    @PostConstruct
+    public void init() {
+        // Initializes the key once the properties are injected by Spring
+        this.key = Keys.hmacShaKeyFor(jwtSecret.getBytes());
+    }
 
     public String generateToken(String email, String role) {
         return Jwts.builder()
                 .setSubject(email)
                 .claim("role", role)
                 .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .setExpiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
     public String getEmailFromToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key).build()
-                .parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
+                .build()
+                .parseClaimsJws(token)
+                .getBody()
+                .getSubject();
     }
-    
+
     public String getRoleFromToken(String token) {
-        return io.jsonwebtoken.Jwts.parserBuilder()
-                .setSigningKey(key) // The key you defined in JwtUtils
+        return Jwts.parserBuilder()
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody()
@@ -43,6 +58,7 @@ public class JwtUtils {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(authToken);
             return true;
         } catch (JwtException e) {
+            // Silently fail to let the filter handle the 403
             return false;
         }
     }

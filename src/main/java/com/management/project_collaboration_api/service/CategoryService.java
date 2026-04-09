@@ -36,6 +36,12 @@ public class CategoryService {
         return modelMapper.map(categoryRepo.save(cat), CategoryDTO.class);
     }
 
+
+public Category findById(Long id) {
+    return categoryRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Category not found"));
+}
+
     public void delete(Long id) {
         categoryRepo.deleteById(id);
     }

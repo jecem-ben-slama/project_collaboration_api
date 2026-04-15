@@ -11,7 +11,7 @@ import java.util.Date;
 @Component
 public class JwtUtils {
 
-    @Value("${project.app.jwtSecret}")
+    @Value("${project.app.jwtSecret:defaultSecretKeyForDevelopmentOnly1234567890}")
     private String jwtSecret;
 
     @Value("${project.app.jwtExpirationMs}")

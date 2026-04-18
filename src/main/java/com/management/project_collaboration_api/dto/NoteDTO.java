@@ -5,8 +5,14 @@ import java.time.LocalDateTime;
 
 @Data
 public class NoteDTO {
+    private Long id;
     private String content;
     private LocalDateTime createdAt;
-    private String authorName;
-    private Long projectId;
+
+    // These will be mapped automatically from the User object in Note
+    private Long userId;
+    private String userEmail;
+    private String userName;
+
+    // Getters and Setters...
 }

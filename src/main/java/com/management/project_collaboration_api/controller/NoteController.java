@@ -6,6 +6,8 @@ import com.management.project_collaboration_api.service.NoteService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -16,8 +18,10 @@ public class NoteController {
 
     @PostMapping("/add")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-    public NoteDTO add(@RequestBody Note note) {
-        return noteService.add(note);
+    public NoteDTO add(@RequestBody Note note, Principal principal) {
+        // We pass the email from the JWT to the service to find the author
+        String email = principal.getName();
+        return noteService.add(note, email);
     }
 
     @GetMapping("/project/{projectId}")

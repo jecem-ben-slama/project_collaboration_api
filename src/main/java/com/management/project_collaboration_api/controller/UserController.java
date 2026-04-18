@@ -3,6 +3,7 @@ package com.management.project_collaboration_api.controller;
 import com.management.project_collaboration_api.dto.PasswordChangeRequest;
 import com.management.project_collaboration_api.dto.UserDTO;
 import com.management.project_collaboration_api.model.User;
+import com.management.project_collaboration_api.service.ProjectService;
 import com.management.project_collaboration_api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,19 +18,22 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-@PostMapping("/register")
-public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload) {
-    User user = new User();
-    user.setName((String) payload.get("name"));
-    user.setEmail((String) payload.get("email"));
-    user.setPassword((String) payload.get("password"));
-    user.setRole(User.Role.valueOf((String) payload.get("role")));
+    @Autowired
+    private ProjectService projectService;
 
-    // Get categoryId from payload
-    Long categoryId = Long.valueOf(payload.get("categoryId").toString());
+    @PostMapping("/register")
+    public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload) {
+        User user = new User();
+        user.setName((String) payload.get("name"));
+        user.setEmail((String) payload.get("email"));
+        user.setPassword((String) payload.get("password"));
+        user.setRole(User.Role.valueOf((String) payload.get("role")));
 
-    return ResponseEntity.ok(userService.register(user, categoryId));
-}
+        // Get categoryId from payload
+        Long categoryId = Long.valueOf(payload.get("categoryId").toString());
+
+        return ResponseEntity.ok(userService.register(user, categoryId));
+    }
 
     @PostMapping("/change-password")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
@@ -71,7 +75,8 @@ public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN', 'EMPLOYEE')") // Both Admin and Employee can update, but logic in service will handle restrictions
+    @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')") // Both Admin and Employee can update, but logic in service will
+                                                     // handle restrictions
     public ResponseEntity<UserDTO> updateUser(
             @PathVariable Long id,
             @RequestBody Map<String, Object> payload) {
@@ -87,6 +92,8 @@ public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload
 
         return ResponseEntity.ok(userService.updateUser(id, userDetails, categoryId));
     }
+
+   
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public void delete(@PathVariable Long id) {

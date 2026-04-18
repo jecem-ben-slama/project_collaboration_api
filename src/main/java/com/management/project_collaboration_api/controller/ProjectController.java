@@ -5,8 +5,11 @@ import com.management.project_collaboration_api.dto.ProjectDTO;
 import com.management.project_collaboration_api.service.AffectationService;
 import com.management.project_collaboration_api.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+
+import java.security.Principal;
 import java.util.List;
 
 @RestController
@@ -23,7 +26,18 @@ public class ProjectController {
     public List<ProjectDTO> getAll() {
         return projectService.getAll();
     }
+    @GetMapping("/my-assigned")
+@PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+public ResponseEntity<List<ProjectDTO>> getMyProjects(Principal principal) {
+    // principal.getName() automatically gives you the email from the JWT
+    return ResponseEntity.ok(projectService.getMyAssignedProjects(principal.getName()));
+}
 
+   @GetMapping("/user/{userId}")
+@PreAuthorize("hasRole('ADMIN')") // Usually only Admins should search by specific IDs
+public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long userId) {
+    return ResponseEntity.ok(projectService.getMyProjects(userId));
+}
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public ProjectDTO getById(@PathVariable Long id) {
@@ -35,6 +49,8 @@ public class ProjectController {
     public ProjectDTO create(@RequestBody ProjectDTO dto) {
         return projectService.create(dto);
     }
+
+   
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,5 +69,15 @@ public class ProjectController {
     public String assign(@RequestBody AffectationRequestDTO request) {
         affectationService.assign(request);
         return "Member assigned successfully";
+    }
+    
+    @DeleteMapping("/{projectId}/remove-user/{userId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> removeUserFromProject(
+            @PathVariable Long projectId,
+            @PathVariable Long userId) {
+
+        projectService.removeAssignment(projectId, userId);
+        return ResponseEntity.ok("User removed from project successfully");
     }
 }

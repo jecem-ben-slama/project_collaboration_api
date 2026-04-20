@@ -3,7 +3,6 @@ package com.management.project_collaboration_api.controller;
 import com.management.project_collaboration_api.dto.PasswordChangeRequest;
 import com.management.project_collaboration_api.dto.UserDTO;
 import com.management.project_collaboration_api.model.User;
-import com.management.project_collaboration_api.service.ProjectService;
 import com.management.project_collaboration_api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,9 +17,6 @@ public class UserController {
 
     @Autowired
     private UserService userService;
-    @Autowired
-    private ProjectService projectService;
-
     @PostMapping("/register")
     public ResponseEntity<UserDTO> register(@RequestBody Map<String, Object> payload) {
         User user = new User();

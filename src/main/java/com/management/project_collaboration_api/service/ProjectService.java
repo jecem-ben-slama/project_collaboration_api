@@ -84,6 +84,9 @@ public List<ProjectDTO> getMyProjects(long userId) {
 
         affectationRepo.delete(affectation);
     }
+   
+    
+   
     public void delete(Long id) {
         projectRepo.deleteById(id);
     }

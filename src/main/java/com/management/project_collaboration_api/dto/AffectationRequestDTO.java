@@ -14,4 +14,5 @@ public class AffectationRequestDTO {
     private LocalDate startDate;
     private LocalDate endDate;
     private boolean isTeamLeader;
+    private String title;
 }

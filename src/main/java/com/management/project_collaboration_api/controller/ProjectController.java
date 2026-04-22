@@ -2,6 +2,7 @@ package com.management.project_collaboration_api.controller;
 
 import com.management.project_collaboration_api.dto.AffectationRequestDTO;
 import com.management.project_collaboration_api.dto.ProjectDTO;
+import com.management.project_collaboration_api.dto.ProjectDetailDTO;
 import com.management.project_collaboration_api.service.AffectationService;
 import com.management.project_collaboration_api.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -65,10 +66,9 @@ public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long u
     }
 
     @PostMapping("/assign")
-    @PreAuthorize("hasRole('ADMIN')")
-    public String assign(@RequestBody AffectationRequestDTO request) {
-        affectationService.assign(request);
-        return "Member assigned successfully";
+    public ResponseEntity<Void> assign(@RequestBody AffectationRequestDTO dto) {
+        affectationService.assign(dto);
+        return ResponseEntity.ok().build();
     }
     
     @DeleteMapping("/{projectId}/remove-user/{userId}")
@@ -80,4 +80,10 @@ public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long u
         projectService.removeAssignment(projectId, userId);
         return ResponseEntity.ok("User removed from project successfully");
     }
+
+    @GetMapping("/all-details")
+@PreAuthorize("hasRole('ADMIN')")
+public ResponseEntity<List<ProjectDetailDTO>> getAllProjectDetails() {
+    return ResponseEntity.ok(affectationService.getAllProjectsForAdmin());
+}
 }

@@ -12,17 +12,34 @@ import java.time.LocalDateTime;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // Handle Foreign Key Violations and Database Constraints
+    @ExceptionHandler(RuntimeException.class)
+    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
+        String message = ex.getMessage();
+        HttpStatus status = HttpStatus.BAD_REQUEST; // Default to 400
+        String title = "Error Occurred";
+
+        // Logic to catch the "Nice Error" without a custom class
+        if (message != null && message.contains("already assigned")) {
+            status = HttpStatus.CONFLICT; // Change to 409
+            title = "Conflict Error";
+        }
+
+        ErrorResponse error = new ErrorResponse(
+                LocalDateTime.now(),
+                status.value(),
+                title,
+                message);
+
+        return new ResponseEntity<>(error, status);
+    }
+
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<ErrorResponse> handleDataIntegrity(DataIntegrityViolationException ex) {
-        String message = "Cannot delete this item because it is currently being used by another part of the system.";
+        String message = "Database constraint violation.";
+        String errorMessage = ex.getMessage().toLowerCase();
 
-        // Optional: You can check if the message contains specific table names to be
-        // more precise
-        if (ex.getMessage().contains("affectation")) {
-            message = "Cannot delete this project while users are still assigned to it.";
-        } else if (ex.getMessage().contains("note")) {
-            message = "Cannot delete this project because it has existing notes.";
+        if (errorMessage.contains("affectation")) {
+            message = "This operation failed because the user or project is still linked to active assignments.";
         }
 
         ErrorResponse error = new ErrorResponse(
@@ -32,16 +49,5 @@ public class GlobalExceptionHandler {
                 message);
 
         return new ResponseEntity<>(error, HttpStatus.CONFLICT);
-    }
-
-    // Handle "Resource Not Found" (Optional but recommended)
-    @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<ErrorResponse> handleRuntime(RuntimeException ex) {
-        ErrorResponse error = new ErrorResponse(
-                LocalDateTime.now(),
-                HttpStatus.BAD_REQUEST.value(),
-                "Error Occurred",
-                ex.getMessage());
-        return new ResponseEntity<>(error, HttpStatus.BAD_REQUEST);
     }
 }

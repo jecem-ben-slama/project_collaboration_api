@@ -12,4 +12,7 @@ public interface AffectationRepository extends JpaRepository<Affectation, Long> 
 
     Optional<Affectation> findByProjectIdAndUserId(Long projectId, Long userId);
     List<Affectation> findByUserId(Long userId);
+    
+    boolean existsByUserIdAndProjectId(Long userId, Long projectId);
+    
 }

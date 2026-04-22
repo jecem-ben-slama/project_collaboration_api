@@ -14,10 +14,9 @@ public class CorsConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**") // Apply to all API endpoints
-                        .allowedOrigins("http://localhost:4200", "https://project-collaboration-front-dusky.vercel.app") // Add
-                                                                                                                         // your
-                                                                                                                         // Flutter/React
-                        // ports
+                        .allowedOrigins("http://localhost:4200", "https://project-collaboration-front-dusky.vercel.app") 
+                                                                                                                         
+                                                                                                                     
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

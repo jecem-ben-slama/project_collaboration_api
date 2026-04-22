@@ -1,6 +1,8 @@
 package com.management.project_collaboration_api.model;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -30,6 +32,15 @@ public class User {
     @ManyToOne
     @JoinColumn(name = "category_id")
     private Category category;
+    // In User.java
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    private List<Affectation> affectations = new ArrayList<>();
+
+    // If not using Lombok, add:
+    public List<Affectation> getAffectations() {
+        return affectations;
+    }
 
     public enum Role {
         ADMIN, EMPLOYEE

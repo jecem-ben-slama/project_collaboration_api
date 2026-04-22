@@ -1,8 +1,10 @@
 package com.management.project_collaboration_api.controller;
 
 import com.management.project_collaboration_api.dto.AffectationRequestDTO;
+import com.management.project_collaboration_api.dto.MyProjectDTO;
 import com.management.project_collaboration_api.dto.ProjectDTO;
 import com.management.project_collaboration_api.dto.ProjectDetailDTO;
+import com.management.project_collaboration_api.dto.UserDTO;
 import com.management.project_collaboration_api.service.AffectationService;
 import com.management.project_collaboration_api.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,18 +24,18 @@ public class ProjectController {
     @Autowired
     private AffectationService affectationService;
 
+
     @GetMapping("/all")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public List<ProjectDTO> getAll() {
         return projectService.getAll();
     }
-    @GetMapping("/my-assigned")
-@PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
-public ResponseEntity<List<ProjectDTO>> getMyProjects(Principal principal) {
-    // principal.getName() automatically gives you the email from the JWT
-    return ResponseEntity.ok(projectService.getMyAssignedProjects(principal.getName()));
-}
 
+    @GetMapping("/my-assigned")
+    public ResponseEntity<List<MyProjectDTO>> getMyProjects(Principal principal) {
+        // The Service handles all the mapping and logic
+        return ResponseEntity.ok(projectService.getMyAssignedProjects(principal.getName()));
+    }
    @GetMapping("/user/{userId}")
 @PreAuthorize("hasRole('ADMIN')") // Usually only Admins should search by specific IDs
 public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long userId) {
@@ -85,5 +87,13 @@ public ResponseEntity<List<ProjectDTO>> getProjectsByUserId(@PathVariable Long u
 @PreAuthorize("hasRole('ADMIN')")
 public ResponseEntity<List<ProjectDetailDTO>> getAllProjectDetails() {
     return ResponseEntity.ok(affectationService.getAllProjectsForAdmin());
+}
+
+@GetMapping("/{projectId}/teammates")
+@PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
+public ResponseEntity<List<UserDTO>> getTeammates(
+        @PathVariable Long projectId, 
+        Principal principal) {
+    return ResponseEntity.ok(affectationService.getProjectTeammates(projectId, principal.getName()));
 }
 }

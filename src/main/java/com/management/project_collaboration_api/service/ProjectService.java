@@ -1,5 +1,6 @@
 package com.management.project_collaboration_api.service;
 
+import com.management.project_collaboration_api.dto.MyProjectDTO;
 import com.management.project_collaboration_api.dto.ProjectDTO;
 import com.management.project_collaboration_api.model.Affectation;
 import com.management.project_collaboration_api.model.Project;
@@ -11,6 +12,8 @@ import com.management.project_collaboration_api.repository.UserRepository;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -25,19 +28,30 @@ private AffectationRepository affectationRepo;
 @Autowired
 private UserRepository userRepo;
 
-
-public List<ProjectDTO> getMyAssignedProjects(String email) {
-    // 1. Find the user based on the email from JWT
+@Transactional(readOnly = true)
+public List<MyProjectDTO> getMyAssignedProjects(String email) {
     User user = userRepo.findByEmail(email)
             .orElseThrow(() -> new RuntimeException("User not found"));
 
-    // 2. Get assignments using the User's ID
-    List<Affectation> assignments = affectationRepo.findByUserId(user.getId());
+    return user.getAffectations().stream().map(affectation -> {
+        MyProjectDTO myProjectDto = new MyProjectDTO();
+        
+        // 1. Map Project Details
+        ProjectDTO projectDto = modelMapper.map(affectation.getProject(), ProjectDTO.class);
+        
+        // Fixed the manual check to use .getName() as per your snippet
+        if (projectDto.getName() == null) {
+            projectDto.setName(affectation.getProject().getName());
+        }
 
-    // 3. Map the projects to DTOs
-    return assignments.stream()
-            .map(aff -> modelMapper.map(aff.getProject(), ProjectDTO.class))
-            .collect(Collectors.toList());
+        // 2. Map Relationship Data (from the Affectation entity)
+        myProjectDto.setProject(projectDto);
+        myProjectDto.setTeamLeader(affectation.isTeamLeader());
+        myProjectDto.setStartDate(affectation.getStartDate()); // From affectation table
+        myProjectDto.setEndDate(affectation.getEndDate());     // From affectation table
+        
+        return myProjectDto;
+    }).toList();
 }
 public List<ProjectDTO> getMyProjects(long userId) {
     // 1. Get all assignments for this user

@@ -39,17 +39,24 @@ public class NoteService {
                 .toList();
     }
 
+
     public NoteDTO update(Long id, String newContent) {
-        // Fetch existing note (this object still has its User and Project)
         Note note = noteRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Note not found"));
 
-        // Update only the content
+        // Strip quotes if they exist
+        if (newContent != null && newContent.startsWith("\"") && newContent.endsWith("\"")) {
+            newContent = newContent.substring(1, newContent.length() - 1);
+        }
+
+        // 1. Update the content
         note.setContent(newContent);
 
-        // Save and map back
-        // The 'note' object still has the 'user' field populated,
-        // so ModelMapper will fill userId/userEmail in the DTO.
+        // 2. Update the timestamp to the current time
+        // If your entity uses @UpdateTimestamp, this happens automatically,
+        // otherwise, do it manually:
+        note.setCreatedAt(java.time.LocalDateTime.now());
+
         Note updatedNote = noteRepo.save(note);
         return modelMapper.map(updatedNote, NoteDTO.class);
     }

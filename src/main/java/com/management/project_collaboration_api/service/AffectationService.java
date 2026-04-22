@@ -9,6 +9,7 @@ import com.management.project_collaboration_api.repository.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -94,4 +95,17 @@ public List<ProjectDetailDTO> getAllProjectsForAdmin() {
     public void remove(Long id) {
         affectationRepo.deleteById(id);
     }
+
+@Transactional(readOnly = true)
+public List<UserDTO> getProjectTeammates(Long projectId, String currentUserEmail) {
+    // 1. Get all assignments for this project
+    List<Affectation> assignments = affectationRepo.findByProjectId(projectId);
+
+    // 2. Map to UserDTOs, excluding the current user
+    return assignments.stream()
+            .map(Affectation::getUser)
+            .filter(user -> !user.getEmail().equals(currentUserEmail))
+            .map(user -> modelMapper.map(user, UserDTO.class))
+            .collect(Collectors.toList());
+}
 }

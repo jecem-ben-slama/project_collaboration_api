@@ -15,19 +15,23 @@ public class Project {
     private Long id;
 
     private String name;
-    private String description;
+    private String description; 
 
     @Enumerated(EnumType.STRING)
     private ProjectStatus status = ProjectStatus.PLANNED;
 
+    // ADD THIS FIELD
+    @Column(name = "created_at", updatable = false)
+    @org.hibernate.annotations.CreationTimestamp
+    private java.time.LocalDateTime createdAt;
 
-  @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
-// Initialize to an empty ArrayList to prevent null issues
-private List<Affectation> affectations = new ArrayList<>();
-// If you are NOT using Lombok @Getter, add this manually:
-public List<Affectation> getAffectations() {
-    return affectations;}
-    
+    @OneToMany(mappedBy = "project", fetch = FetchType.LAZY)
+    private List<Affectation> affectations = new ArrayList<>();
+
+    public List<Affectation> getAffectations() {
+        return affectations;
+    }
+
     public enum ProjectStatus {
         PLANNED, IN_PROGRESS, COMPLETED, ON_HOLD
     }

@@ -4,6 +4,7 @@ import com.management.project_collaboration_api.dto.PasswordChangeRequest;
 import com.management.project_collaboration_api.dto.UserDTO;
 import com.management.project_collaboration_api.model.Category;
 import com.management.project_collaboration_api.model.User;
+import com.management.project_collaboration_api.model.User.Role;
 import com.management.project_collaboration_api.repository.CategoryRepository;
 import com.management.project_collaboration_api.repository.UserRepository;
 import org.modelmapper.ModelMapper;
@@ -38,7 +39,7 @@ public class UserService {
 
     public List<UserDTO> getEmployees() {
         // We only fetch users with the 'EMPLOYEE' role
-        return userRepo.findByRole("EMPLOYEE").stream()
+        return userRepo.findByRole(Role.EMPLOYEE).stream()
                 .map(u -> modelMapper.map(u, UserDTO.class))
                 .toList();
     }

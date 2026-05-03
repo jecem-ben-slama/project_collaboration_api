@@ -10,7 +10,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
     // Used for Login and Security Context
     Optional<User> findByEmail(String email);
 
-    List<User> findByRole(String role);
+    List<User> findByRole(User.role role);
     // Used for the Reset Password flow
     Optional<User> findByResetToken(String resetToken);
 }

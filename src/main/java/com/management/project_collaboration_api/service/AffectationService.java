@@ -33,6 +33,8 @@ public class AffectationService {
             // The Handler looks for "already assigned" to trigger a 409 Conflict
             throw new RuntimeException("This user is already assigned to this project.");
         }
+        
+        
 
         User u = userRepo.findById(dto.getUserId())
                 .orElseThrow(() -> new RuntimeException("User not found"));

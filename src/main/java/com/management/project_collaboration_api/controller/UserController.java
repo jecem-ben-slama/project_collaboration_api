@@ -64,6 +64,11 @@ public class UserController {
         return userService.getAll();
     }
 
+    @GetMapping("/employees")
+    public ResponseEntity<List<UserDTO>> getEmployees() {
+        List<UserDTO> employees = userService.getEmployees();
+        return ResponseEntity.ok(employees);
+    }
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'EMPLOYEE')")
     public UserDTO getById(@PathVariable Long id) {

@@ -36,6 +36,12 @@ public class UserService {
                 .map(u -> modelMapper.map(u, UserDTO.class)).toList();
     }
 
+    public List<UserDTO> getEmployees() {
+        // We only fetch users with the 'EMPLOYEE' role
+        return userRepo.findByRole("EMPLOYEE").stream()
+                .map(u -> modelMapper.map(u, UserDTO.class))
+                .toList();
+    }
     public UserDTO getById(Long id) {
         User user = userRepo.findById(id).orElseThrow(() -> new RuntimeException("User not found"));
         return modelMapper.map(user, UserDTO.class);

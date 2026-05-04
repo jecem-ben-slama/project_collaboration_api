@@ -71,7 +71,13 @@ public class UserService {
         existingUser.setName(userDetails.getName());
         existingUser.setEmail(userDetails.getEmail());
 
-        // Only update password if a new one is provided
+        // CRITICAL: Update the Role
+        // This allows switching between ADMIN and EMPLOYEE
+        if (userDetails.getRole() != null) {
+            existingUser.setRole(userDetails.getRole());
+        }
+
+        // Only update password if a new one is provided (usually for password reset)
         if (userDetails.getPassword() != null && !userDetails.getPassword().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(userDetails.getPassword()));
         }
@@ -79,15 +85,27 @@ public class UserService {
         // 3. Handle Category Update
         if (categoryId != null) {
             Category category = categoryRepo.findById(categoryId)
-                    .orElseThrow(() -> new RuntimeException("Category not found"));
+                    .orElseThrow(() -> new RuntimeException("Category not found with id: " + categoryId));
             existingUser.setCategory(category);
-        } else if (existingUser.getRole() == User.Role.ADMIN) {
-            // If updating an Admin, we can explicitly allow the category to be null
-            existingUser.setCategory(null);
+        } else {
+            // If no categoryId is provided, check if it's an Admin
+            // This ensures that if you switch an Admin to an Employee without a category,
+            // the app behaves predictably.
+            if (existingUser.getRole() == User.Role.ADMIN) {
+                // Note: In your current system, we are using "IT Admin" category for Admins,
+                // but this keeps the field flexible if you ever want to allow true nulls.
+                existingUser.setCategory(null);
+            }
         }
 
         // 4. Save and Map
         User updatedUser = userRepo.save(existingUser);
+
+        // Log the successful update for debugging
+        System.out.println("✅ User updated successfully: ID " + id +
+                " | Role: " + updatedUser.getRole() +
+                " | Category: " + (updatedUser.getCategory() != null ? updatedUser.getCategory().getLabel() : "None"));
+
         return modelMapper.map(updatedUser, UserDTO.class);
     }
 

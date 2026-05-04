@@ -3,6 +3,7 @@ package com.management.project_collaboration_api.controller;
 import com.management.project_collaboration_api.dto.PasswordChangeRequest;
 import com.management.project_collaboration_api.dto.UserDTO;
 import com.management.project_collaboration_api.model.User;
+import com.management.project_collaboration_api.model.User.Role;
 import com.management.project_collaboration_api.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -86,7 +87,15 @@ public class UserController {
         userDetails.setName((String) payload.get("name"));
         userDetails.setEmail((String) payload.get("email"));
         userDetails.setPassword((String) payload.get("password"));
-
+        Object roleObj = payload.get("role");
+        if (roleObj != null) {
+            try {
+                // Converts "ADMIN" string to Role.ADMIN enum
+                userDetails.setRole(Role.valueOf(roleObj.toString().toUpperCase()));
+            } catch (IllegalArgumentException e) {
+                throw new RuntimeException("Invalid role provided: " + roleObj);
+            }
+        }
         // Extract categoryId (might be null for Admins)
         Object catIdObj = payload.get("categoryId");
         Long categoryId = (catIdObj != null) ? Long.valueOf(catIdObj.toString()) : null;
